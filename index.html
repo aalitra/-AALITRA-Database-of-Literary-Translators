@@ -1,0 +1,479 @@
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; color: #222; }
+  .header-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+  .header-row img { height: 60px; width: auto; }
+  h1 { font-family: 'Lora', serif; font-size: 28px; font-weight: 600; margin: 0; }
+  .description { font-size: 16px; color: #444; max-width: 800px; margin-bottom: 20px; line-height: 1.5; }
+  .controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  input, select { padding: 8px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+  input[type="text"] { flex: 1; min-width: 200px; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+  th { background: #f5f5f5; position: sticky; top: 0; }
+  .empty { padding: 20px; text-align: center; color: #888; }
+
+  @media (max-width: 768px) {
+    tr.data-row { cursor: pointer; }
+    tr.data-row:hover { background: #f7fafc; }
+    .mobile-hide { display: none; }
+    .expand-desktop { display: none; }
+    table { table-layout: fixed; }
+    td, th { word-wrap: break-word; overflow-wrap: break-word; }
+    .expand-cell.expand-mobile { width: 32px; }
+  }
+
+  @media (min-width: 769px) {
+    .expand-mobile { display: none; }
+  }
+
+  .expand-cell { text-align: center; width: 36px; cursor: pointer; }
+  .expand-desktop { width: 90px; }
+  .expand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    color: #555;
+  }
+  .expand-icon:hover { background: #e8e8e8; }
+
+  .info-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #888;
+    color: #fff;
+    font-size: 12px;
+    font-style: italic;
+    text-align: center;
+    line-height: 16px;
+    cursor: help;
+    position: relative;
+    margin-left: 4px;
+  }
+  .info-icon:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 20px;
+    top: -6px;
+    background: #333;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    white-space: normal;
+    width: 220px;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  .contact-btn {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #2a5b8a;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .contact-btn:hover { background: #1e4569; }
+
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+  .results-count { font-size: 14px; color: #666; }
+  .last-updated { font-size: 13px; color: #999; }
+  .loading-msg { padding: 30px; text-align: center; color: #888; font-size: 16px; }
+
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { background: #ececec; }
+  th.sortable .sort-arrow { display: inline-block; width: 12px; opacity: 0.5; font-size: 12px; }
+  th.sortable.sorted .sort-arrow { opacity: 1; }
+
+  mark.hl { background: #fdf3c8; color: inherit; padding: 0 1px; border-radius: 2px; }
+
+  .sl-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .sl-direction-arrow {
+    flex-shrink: 0;
+    color: #666;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-overlay.open {
+    animation: fadeIn 0.2s ease-out;
+  }
+  .modal-box {
+    background: #fff;
+    border-radius: 8px;
+    max-width: 520px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px;
+    position: relative;
+  }
+  .modal-overlay.open .modal-box {
+    animation: slideUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    cursor: pointer;
+    font-size: 22px;
+    background: none;
+    border: none;
+    color: #666;
+    line-height: 1;
+  }
+  .modal-close:hover { color: #000; }
+  .modal-name { font-family: 'Lora', serif; font-size: 22px; font-weight: 600; margin: 0 0 16px 0; padding-right: 24px; }
+  .modal-field { margin-bottom: 16px; }
+  .modal-field:last-child { margin-bottom: 0; }
+  .modal-field label {
+    display: block;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .modal-field .value { font-size: 16px; line-height: 1.5; }
+  .directory-footer-note {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+  }
+  .directory-footer-note p {
+    font-size: 14px;
+    color: #555;
+    max-width: 480px;
+    line-height: 1.5;
+    margin: 0;
+  }
+</style>
+
+<div class="header-row">
+  <img src="https://www.dropbox.com/scl/fi/t5x5sjh7b5slck3rjjwvx/AALITRA-Logo-Transparent-Background.png?rlkey=kmxfo3discm6x6llqinnt7998&st=1ico5o5y&raw=1" alt="AALITRA logo">
+  <h1>AALITRA Directory of Literary Translators</h1>
+</div>
+
+<p class="description">
+  This database is intended to help users easily find experienced Australian translators of literary texts.
+  You can search for a translator by name or language, using the search bar below.
+  If you would like to get in contact with a translator who does not have their email publicly listed,
+  please use the "Request contact details" button</a>.
+</p>
+
+<div class="controls">
+  <input type="text" id="searchBox" placeholder="Search by name or language...">
+  <select id="directionFilter">
+    <option value="All">All directions</option>
+    <option value="LOTE to English">LOTE to English</option>
+    <option value="English to LOTE">English to LOTE</option>
+    <option value="Both">Both</option>
+  </select>
+</div>
+
+<div class="meta-row">
+  <div class="results-count" id="resultsCount"></div>
+  <div class="last-updated" id="lastUpdated"></div>
+</div>
+
+<div id="loadingMsg" class="loading-msg">Loading directory...</div>
+
+<table id="directoryTable" style="display:none;">
+  <thead>
+    <tr>
+      <th class="sortable" data-key="name">Name <span class="sort-arrow">↕</span></th>
+      <th>Source Language(s)</th><th>Target Language(s)</th>
+      <th class="expand-cell expand-mobile"></th>
+      <th class="mobile-hide">Publications</th><th class="mobile-hide">Prizes</th><th class="mobile-hide">Contact</th>
+      <th class="expand-cell expand-desktop">Learn More</th>
+    </tr>
+  </thead>
+  <tbody id="resultsBody"></tbody>
+</table>
+<div id="emptyState" class="empty" style="display:none;">No matching translators found.</div>
+
+<div class="directory-footer-note">
+  <p>
+    Not seeing your name, or need to update your details? Current AALITRA members can add or update their translator profile at any time by filling out <a href="https://form.jotform.com/261863183681060">this form</a>.
+  </p>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+    <h2 class="modal-name" id="modalName"></h2>
+
+    <div class="modal-field">
+      <label>Direction</label>
+      <div class="value" id="modalDirection"></div>
+    </div>
+    <div class="modal-field">
+      <label>Source Language(s)</label>
+      <div class="value" id="modalSL"></div>
+    </div>
+    <div class="modal-field">
+      <label>Target Language(s)</label>
+      <div class="value" id="modalTL"></div>
+    </div>
+    <div class="modal-field">
+      <label>Publications</label>
+      <div class="value" id="modalPublications"></div>
+    </div>
+    <div class="modal-field">
+      <label>Prizes</label>
+      <div class="value" id="modalPrizes"></div>
+    </div>
+    <div class="modal-field" id="modalOtherWrap">
+      <label>Other Information</label>
+      <div class="value" id="modalOther"></div>
+    </div>
+    <div class="modal-field">
+      <label>Contact</label>
+      <div class="value" id="modalContact"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let allData = [];
+  let filteredData = [];
+  let sortKey = null;
+  let sortDir = 'asc';
+
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzT_4RqAN_3G4tv5Z6aylDvF5AOsgmG4VJeiHc3DCxH2fJvzIZLVSzlIW7-dCsXXEvdSw/exec?format=json';
+
+fetch(SCRIPT_URL)
+  .then(function(res) { return res.json(); })
+  .then(function(response) {
+    allData = response.rows;
+    filteredData = allData;
+
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('directoryTable').style.display = '';
+
+    if (response.lastUpdated) {
+      const d = new Date(response.lastUpdated);
+      document.getElementById('lastUpdated').textContent =
+        'Last updated ' + d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) +
+        ' at ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+
+    render(filteredData);
+  })
+  .catch(function(err) {
+    document.getElementById('loadingMsg').textContent = 'Could not load directory data.';
+    console.error(err);
+  });
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatMultiline(str) {
+    return escapeHtml(str).replace(/\n/g, '<br>');
+  }
+
+  function formatLanguage(langHtml, variety) {
+    if (!variety) return langHtml;
+    if (variety.length <= 20) {
+      return langHtml + ' (' + escapeHtml(variety) + ')';
+    }
+    return langHtml + ' <span class="info-icon" data-tooltip="' + escapeHtml(variety) + '">i</span>';
+  }
+
+  function formatLanguageFull(lang, variety) {
+    if (!variety) return escapeHtml(lang);
+    return escapeHtml(lang) + ' (' + escapeHtml(variety) + ')';
+  }
+
+  function contactMailto(r) {
+    const subject = encodeURIComponent('Contact request: ' + r.firstName + ' ' + r.lastName);
+    const body = encodeURIComponent('Hello AALITRA,\n\nI would like to get in touch with ' + r.firstName + ' ' + r.lastName + ' from the Directory of Literary Translators.\n\nThank you.');
+    return 'mailto:aalitra.australia@gmail.com?subject=' + subject + '&body=' + body;
+  }
+
+  function formatContact(r) {
+    if (r.contact) return formatMultiline(r.contact);
+    return '<a class="contact-btn" href="' + contactMailto(r) + '">Request contact details</a>';
+  }
+
+  // Wraps any part of `text` that matches `query` in <mark class="hl">, HTML-escaping everything else safely.
+  function highlight(text, query) {
+    const escaped = escapeHtml(text);
+    if (!query) return escaped;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp('(' + escapedQuery + ')', 'ig');
+    return escaped.replace(re, '<mark class="hl">$1</mark>');
+  }
+
+  const expandSvg = '<svg class="expand-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>';
+
+  function render(rows) {
+    const body = document.getElementById('resultsBody');
+    const empty = document.getElementById('emptyState');
+    const query = document.getElementById('searchBox').value.trim();
+
+    document.getElementById('resultsCount').textContent =
+      'Showing ' + rows.length + ' of ' + allData.length + ' translators';
+
+    body.innerHTML = '';
+    if (rows.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    rows.forEach(function(r, i) {
+      const nameHtml = highlight(r.firstName, query) + ' ' + highlight(r.lastName, query);
+      const slHtml = formatLanguage(highlight(r.sourceLanguages, query), r.sourceVariety);
+      const tlHtml = formatLanguage(highlight(r.targetLanguages, query), r.targetVariety);
+      const arrowChar = r.direction === 'Both' ? '⇄' : '→';
+      const tr = document.createElement('tr');
+      tr.className = 'data-row';
+      tr.dataset.index = i;
+      tr.innerHTML =
+        '<td>' + nameHtml + '</td>' +
+        '<td><div class="sl-cell"><span>' + slHtml + '</span><span class="sl-direction-arrow">' + arrowChar + '</span></div></td>' +
+        '<td>' + tlHtml + '</td>' +
+        '<td class="expand-cell expand-mobile">' + expandSvg + '</td>' +
+        '<td class="mobile-hide">' + formatMultiline(r.publications) + '</td>' +
+        '<td class="mobile-hide">' + formatMultiline(r.prizes) + '</td>' +
+        '<td class="mobile-hide">' + formatContact(r) + '</td>' +
+        '<td class="expand-cell expand-desktop">' + expandSvg + '</td>';
+      tr.querySelectorAll('.expand-cell').forEach(function(cell) {
+        cell.addEventListener('click', function(e) {
+          e.stopPropagation();
+          openModal(rows[i]);
+        });
+      });
+      tr.addEventListener('click', function(e) {
+        if (window.innerWidth > 768) return; // popup is mobile-only via row click
+        if (e.target.closest('a')) return; // let the contact link/mailto behave normally
+        openModal(rows[i]);
+      });
+      body.appendChild(tr);
+    });
+  }
+
+  function openModal(r) {
+    document.getElementById('modalName').textContent = r.firstName + ' ' + r.lastName;
+    document.getElementById('modalDirection').textContent = r.direction || '';
+    document.getElementById('modalSL').innerHTML = formatLanguageFull(r.sourceLanguages, r.sourceVariety);
+    document.getElementById('modalTL').innerHTML = formatLanguageFull(r.targetLanguages, r.targetVariety);
+    document.getElementById('modalPublications').innerHTML = formatMultiline(r.publications) || '&mdash;';
+    document.getElementById('modalPrizes').innerHTML = formatMultiline(r.prizes) || '&mdash;';
+
+    const otherWrap = document.getElementById('modalOtherWrap');
+    if (r.otherInfo) {
+      document.getElementById('modalOther').innerHTML = formatMultiline(r.otherInfo);
+      otherWrap.style.display = 'block';
+    } else {
+      otherWrap.style.display = 'none';
+    }
+
+    document.getElementById('modalContact').innerHTML = formatContact(r);
+    const overlay = document.getElementById('modalOverlay');
+    overlay.style.display = 'flex';
+    overlay.classList.remove('open');
+    void overlay.offsetWidth; // restart animation if reopened quickly
+    overlay.classList.add('open');
+  }
+
+  function closeModal() {
+    const overlay = document.getElementById('modalOverlay');
+    overlay.style.display = 'none';
+    overlay.classList.remove('open');
+  }
+
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  function applyFilters() {
+    const query = document.getElementById('searchBox').value.toLowerCase();
+    const direction = document.getElementById('directionFilter').value;
+    filteredData = allData.filter(function(r) {
+      const matchesText = !query ||
+        (r.firstName + ' ' + r.lastName + ' ' + r.sourceLanguages + ' ' + r.targetLanguages)
+          .toLowerCase().includes(query);
+      const matchesDirection = direction === 'All' || r.direction === direction;
+      return matchesText && matchesDirection;
+    });
+    applySort();
+  }
+
+  function applySort() {
+    let rows = filteredData.slice();
+    if (sortKey) {
+      rows.sort(function(a, b) {
+        valA = (a.firstName + ' ' + a.lastName).toLowerCase();
+        valB = (b.firstName + ' ' + b.lastName).toLowerCase();
+        if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+        if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    render(rows);
+  }
+
+  document.getElementById('searchBox').addEventListener('input', applyFilters);
+  document.getElementById('directionFilter').addEventListener('change', applyFilters);
+
+  document.querySelectorAll('th.sortable').forEach(function(th) {
+    th.addEventListener('click', function() {
+      const key = th.dataset.key;
+      if (sortKey === key) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortKey = key;
+        sortDir = 'asc';
+      }
+      document.querySelectorAll('th.sortable').forEach(function(other) {
+        other.classList.remove('sorted');
+        other.querySelector('.sort-arrow').textContent = '↕';
+      });
+      th.classList.add('sorted');
+      th.querySelector('.sort-arrow').textContent = sortDir === 'asc' ? '↑' : '↓';
+      applySort();
+    });
+  });
+</script>
