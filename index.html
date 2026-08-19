@@ -272,10 +272,33 @@
   let sortDir = 'asc';
 
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzT_4RqAN_3G4tv5Z6aylDvF5AOsgmG4VJeiHc3DCxH2fJvzIZLVSzlIW7-dCsXXEvdSw/exec?format=json';
+  const SNAPSHOT_URL = 'directory.json';
 
-fetch(SCRIPT_URL)
-  .then(function(res) { return res.json(); })
-  .then(function(response) {
+  // Read the published file. Only if that fails do we trouble Google.
+  fetch(SNAPSHOT_URL)
+    .then(function(res) {
+      if (!res.ok) throw new Error('No snapshot file');
+      return res.json();
+    })
+    .then(function(response) { showData(response); })
+    .catch(function(err) {
+      console.error('No snapshot, falling back to live', err);
+      loadLive();
+    });
+
+  function loadLive() {
+    fetch(SCRIPT_URL)
+      .then(function(res) { return res.json(); })
+      .then(function(response) { showData(response); })
+      .catch(function(err) {
+        document.getElementById('loadingMsg').textContent = 'Could not load directory data.';
+        console.error(err);
+      });
+  }
+
+  function showData(response) {
+    if (!response || !response.rows) return;
+
     allData = response.rows;
     filteredData = allData;
 
@@ -289,12 +312,8 @@ fetch(SCRIPT_URL)
         ' at ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
     }
 
-    render(filteredData);
-  })
-  .catch(function(err) {
-    document.getElementById('loadingMsg').textContent = 'Could not load directory data.';
-    console.error(err);
-  });
+    applyFilters();
+  }
 
   function escapeHtml(str) {
     if (!str) return '';
