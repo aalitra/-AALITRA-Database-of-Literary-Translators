@@ -85,9 +85,11 @@
   }
   .contact-btn:hover { background: #1e4569; }
 
-  /* Contact column hugs the one-line button; Publications and Prizes share an equal width. */
-  th.contact-col, td.contact-col { width: 1%; white-space: nowrap; }
-  th.pp-col, td.pp-col { width: 200px; }
+  /* Contact column shrinks to fit the one-line button; long emails wrap instead of widening it. */
+  th.contact-col, td.contact-col { width: 1%; }
+  td.contact-col { overflow-wrap: anywhere; }
+  /* Publications and Prizes share an equal width (midpoint of their natural sizes). */
+  th.pp-col, td.pp-col { width: 23.5%; }
 
   .meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
   .results-count { font-size: 14px; color: #666; }
@@ -192,7 +194,7 @@
 </div>
 
 <p class="description">
-  This directory is intended to help users easily find Australian translators of literary texts.
+  This directory is intended to help users easily find experienced Australian translators of literary texts.
   You can search for a translator by name or language, using the search bar below.
   If you would like to get in contact with a translator who does not have their email publicly listed,
   please use the "Request contact details" button</a>.
