@@ -81,11 +81,13 @@
     text-decoration: none;
     border-radius: 4px;
     font-size: 13px;
-    white-space: normal;
+    white-space: nowrap;
   }
   .contact-btn:hover { background: #1e4569; }
 
-  th.contact-col, td.contact-col { width: 130px; overflow-wrap: anywhere; }
+  /* Contact column hugs the one-line button; Publications and Prizes share an equal width. */
+  th.contact-col, td.contact-col { width: 1%; white-space: nowrap; }
+  th.pp-col, td.pp-col { width: 200px; }
 
   .meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
   .results-count { font-size: 14px; color: #666; }
@@ -190,7 +192,7 @@
 </div>
 
 <p class="description">
-  This directory is intended to help users easily find experienced Australian translators of literary texts.
+  This directory is intended to help users easily find Australian translators of literary texts.
   You can search for a translator by name or language, using the search bar below.
   If you would like to get in contact with a translator who does not have their email publicly listed,
   please use the "Request contact details" button</a>.
@@ -220,7 +222,7 @@
       <th class="sortable" data-key="name">Name <span class="sort-arrow">↕</span></th>
       <th>Source Language(s)</th><th>Target Language(s)</th>
       <th class="expand-cell expand-mobile"></th>
-      <th class="mobile-hide">Publications</th><th class="mobile-hide">Prizes</th><th class="mobile-hide contact-col">Contact</th>
+      <th class="mobile-hide pp-col">Publications</th><th class="mobile-hide pp-col">Prizes</th><th class="mobile-hide contact-col">Contact</th>
       <th class="expand-cell expand-desktop">Learn More</th>
     </tr>
   </thead>
@@ -395,8 +397,8 @@
         '<td><div class="sl-cell"><span>' + slHtml + '</span><span class="sl-direction-arrow">' + arrowChar + '</span></div></td>' +
         '<td>' + tlHtml + '</td>' +
         '<td class="expand-cell expand-mobile">' + expandSvg + '</td>' +
-        '<td class="mobile-hide">' + formatMultiline(r.publications) + '</td>' +
-        '<td class="mobile-hide">' + formatMultiline(r.prizes) + '</td>' +
+        '<td class="mobile-hide pp-col">' + formatMultiline(r.publications) + '</td>' +
+        '<td class="mobile-hide pp-col">' + formatMultiline(r.prizes) + '</td>' +
         '<td class="mobile-hide contact-col">' + formatContact(r) + '</td>' +
         '<td class="expand-cell expand-desktop">' + expandSvg + '</td>';
       tr.querySelectorAll('.expand-cell').forEach(function(cell) {
@@ -452,14 +454,19 @@
     if (e.key === 'Escape') closeModal();
   });
 
+  // Lowercase and strip diacritics so "quebecois" matches "Québécois".
+  function normalizeText(str) {
+    return String(str == null ? '' : str).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
   function applyFilters() {
-    const query = document.getElementById('searchBox').value.toLowerCase();
+    const query = normalizeText(document.getElementById('searchBox').value);
     const direction = document.getElementById('directionFilter').value;
     const publishedOnly = document.getElementById('publishedFilter').checked;
     filteredData = allData.filter(function(r) {
       const matchesText = !query ||
-        (r.firstName + ' ' + r.lastName + ' ' + r.sourceLanguages + ' ' + r.targetLanguages)
-          .toLowerCase().includes(query);
+        normalizeText([r.firstName, r.lastName, r.sourceLanguages, r.sourceVariety, r.targetLanguages, r.targetVariety, r.otherInfo]
+          .filter(Boolean).join(' ')).includes(query);
       // "Both" translators work in both directions, so include them under either single-direction filter too.
       const matchesDirection = direction === 'All' || r.direction === direction || r.direction === 'Both';
       const matchesPublished = !publishedOnly || (r.publications && String(r.publications).trim() !== '');
