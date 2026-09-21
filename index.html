@@ -8,6 +8,8 @@
   .controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
   input, select { padding: 8px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
   input[type="text"] { flex: 1; min-width: 200px; }
+  .checkbox-filter { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: #333; cursor: pointer; user-select: none; }
+  .checkbox-filter input[type="checkbox"] { width: auto; min-width: 0; padding: 0; margin: 0; cursor: pointer; }
   table { width: 100%; border-collapse: collapse; font-size: 16px; }
   th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; vertical-align: top; }
   th { background: #f5f5f5; position: sticky; top: 0; }
@@ -79,9 +81,11 @@
     text-decoration: none;
     border-radius: 4px;
     font-size: 13px;
-    white-space: nowrap;
+    white-space: normal;
   }
   .contact-btn:hover { background: #1e4569; }
+
+  th.contact-col, td.contact-col { width: 130px; overflow-wrap: anywhere; }
 
   .meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
   .results-count { font-size: 14px; color: #666; }
@@ -200,6 +204,7 @@
     <option value="English to LOTE">English to LOTE</option>
     <option value="Both">Both</option>
   </select>
+  <label class="checkbox-filter"><input type="checkbox" id="publishedFilter"> Previously published</label>
 </div>
 
 <div class="meta-row">
@@ -215,7 +220,7 @@
       <th class="sortable" data-key="name">Name <span class="sort-arrow">↕</span></th>
       <th>Source Language(s)</th><th>Target Language(s)</th>
       <th class="expand-cell expand-mobile"></th>
-      <th class="mobile-hide">Publications</th><th class="mobile-hide">Prizes</th><th class="mobile-hide">Contact</th>
+      <th class="mobile-hide">Publications</th><th class="mobile-hide">Prizes</th><th class="mobile-hide contact-col">Contact</th>
       <th class="expand-cell expand-desktop">Learn More</th>
     </tr>
   </thead>
@@ -392,7 +397,7 @@
         '<td class="expand-cell expand-mobile">' + expandSvg + '</td>' +
         '<td class="mobile-hide">' + formatMultiline(r.publications) + '</td>' +
         '<td class="mobile-hide">' + formatMultiline(r.prizes) + '</td>' +
-        '<td class="mobile-hide">' + formatContact(r) + '</td>' +
+        '<td class="mobile-hide contact-col">' + formatContact(r) + '</td>' +
         '<td class="expand-cell expand-desktop">' + expandSvg + '</td>';
       tr.querySelectorAll('.expand-cell').forEach(function(cell) {
         cell.addEventListener('click', function(e) {
@@ -450,12 +455,15 @@
   function applyFilters() {
     const query = document.getElementById('searchBox').value.toLowerCase();
     const direction = document.getElementById('directionFilter').value;
+    const publishedOnly = document.getElementById('publishedFilter').checked;
     filteredData = allData.filter(function(r) {
       const matchesText = !query ||
         (r.firstName + ' ' + r.lastName + ' ' + r.sourceLanguages + ' ' + r.targetLanguages)
           .toLowerCase().includes(query);
-      const matchesDirection = direction === 'All' || r.direction === direction;
-      return matchesText && matchesDirection;
+      // "Both" translators work in both directions, so include them under either single-direction filter too.
+      const matchesDirection = direction === 'All' || r.direction === direction || r.direction === 'Both';
+      const matchesPublished = !publishedOnly || (r.publications && String(r.publications).trim() !== '');
+      return matchesText && matchesDirection && matchesPublished;
     });
     applySort();
   }
@@ -476,6 +484,7 @@
 
   document.getElementById('searchBox').addEventListener('input', applyFilters);
   document.getElementById('directionFilter').addEventListener('change', applyFilters);
+  document.getElementById('publishedFilter').addEventListener('change', applyFilters);
 
   document.querySelectorAll('th.sortable').forEach(function(th) {
     th.addEventListener('click', function() {
